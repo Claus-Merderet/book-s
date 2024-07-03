@@ -1,30 +1,40 @@
 <script setup lang="ts">
 import CompanyData = App.Data.CompanyData;
-import {InertiaForm, useForm} from '@inertiajs/vue3'
+import {useForm} from '@inertiajs/vue3'
 import AppLayout from "@/Layouts/AppLayout.vue";
+import TextInput from "@/Components/TextInput.vue";
+import InputLabel from "@/Components/InputLabel.vue";
+import InputError from "@/Components/InputError.vue";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+
 
 const props = defineProps<{
   company: CompanyData;
-  errors: { name?: string | null, address?: string | null } | null;
 }>();
-const form = <InertiaForm<any>>useForm({
+
+const form = useForm({
   name: props.company.name,
   address: props.company.address,
+  errors: {},
 });
+
 function submit() {
   if (props.company.name !== form.name || props.company.address !== form.address) {
     const url = route("companies.update", {id: props.company.id});
     form.patch(url, {
       preserveState: false,
       onSuccess: (response: any) => {
+        console.log('success');
         console.log(response);
       },
       onError: async (message: any) => {
+        console.log('error');
         console.log(message);
       }
     });
   }
 }
+
 const goBack = () => {
   window.history.back();
 };
@@ -35,31 +45,53 @@ window.addEventListener('popstate', function (event: PopStateEvent): void {
 
 <template>
   <AppLayout>
-    <div class="mt-5 ml-5 text-3xl font-bold text-gray-800">
-      Edit Company
-    </div>
-    <div class="flex items-center justify-center flex-col mt-6">
-      <form @submit.prevent="submit" class="p-4 border border-gray-300 bg-white shadow-lg rounded-md w-2/5">
-        <div class="text-xl font-semibold mb-4">Company Data</div>
-        <div class="mb-4">
-          <label for="company_name" class="block text-sm font-medium text-gray-700">Name</label>
-          <input id="company_name" v-model="form.name" class="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"/>
-          <div v-if="props.errors && props.errors.name" class="text-red-500 text-sm mt-1">{{ props.errors.name }}</div>
-        </div>
-        <div class="mb-4">
-          <label for="company_address" class="block text-sm font-medium text-gray-700">Address</label>
-          <input id="company_address" v-model="form.address" class="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"/>
-          <div v-if="props.errors && props.errors.address" class="text-red-500 text-sm mt-1">{{ props.errors.address }}</div>
-        </div>
-        <div class="flex justify-end space-x-4">
-          <button type="submit" :disabled="form.processing" class="inline-flex items-center justify-center px-4 py-2 rounded-md shadow-md bg-gray-800 text-white hover:bg-gray-700 hover:text-gray-300 transition duration-300 disabled:opacity-50">
-            Update
-          </button>
-          <button @click="goBack()" class="inline-flex items-center justify-center px-4 py-2 rounded-md shadow-md bg-gray-500 text-white hover:bg-gray-600 hover:text-gray-100 transition duration-300">
-            Back
-          </button>
-        </div>
-      </form>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+      <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+        <section>
+          <header>
+            <h2 class="text-lg font-medium text-gray-900"> Company Information</h2>
+            <p class="mt-1 text-sm text-gray-600">
+              Update your company's profile information.
+            </p>
+          </header>
+          <form @submit.prevent="form.patch(route('companies.update', {id: props.company.id}))" class="mt-6 space-y-6">
+            <div>
+              <InputLabel for="company_name" value="Name"/>
+
+              <TextInput
+                  id="company_name"
+                  type="text"
+                  class="mt-1 block w-full"
+                  v-model="form.name"
+              />
+              <InputError class="mt-2" v-if="form.errors.name"
+                          :message="form.errors.name" v-bind:delay="500"/>
+            </div>
+            <div>
+              <InputLabel for="company_address" value="Address"/>
+              <TextInput
+                  id="company_address"
+                  type="text"
+                  class="mt-1 block w-full"
+                  v-model="form.address"
+              />
+              <InputError class="mt-2" v-if="form.errors.address" :message="form.errors.address"/>
+            </div>
+            <div class="flex justify-end gap-4 items-center">
+              <Transition
+                  enter-active-class="transition ease-in-out"
+                  enter-from-class="opacity-0"
+                  leave-active-class="transition ease-in-out"
+                  leave-to-class="opacity-0"
+              >
+                <p v-if="form.recentlySuccessful" class="text-sm text-gray-600">Saved.</p>
+              </Transition>
+              <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+              <PrimaryButton @click="goBack()">Back</PrimaryButton>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
   </AppLayout>
 </template>
